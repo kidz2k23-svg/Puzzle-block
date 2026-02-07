@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Puzzle Block Neon</title>
+    <title>Puzzle Block</title>
     <style>
         :root { --neon: #0ef; --bg: #020617; --accent: #7c3aed; --pink: #ff007b; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; }
         
@@ -42,7 +42,7 @@
         
         .page { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         .hidden { display: none !important; }
-        .play-btn { padding: 18px 45px; font-size: 1.3rem; background: var(--accent); color: white; border: none; border-radius: 50px; font-weight: bold; box-shadow: 0 0 25px var(--accent); cursor: pointer; margin-top: 15px; text-transform: uppercase; pointer-events: auto; }
+        .play-btn { padding: 18px 45px; font-size: 1.3rem; background: var(--accent); color: white; border: none; border-radius: 50px; font-weight: bold; box-shadow: 0 0 25px var(--accent); cursor: pointer; margin-top: 15px; text-transform: uppercase; }
         
         #leaderboard { margin: 20px 0; width: 230px; border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 15px; background: rgba(0, 0, 0, 0.4); padding: 12px; }
         .lb-title { color: var(--pink); font-weight: bold; letter-spacing: 3px; margin-bottom: 10px; text-align: center; font-size: 0.9rem; }
@@ -55,7 +55,6 @@
             background: #000; 
             border: 2px solid #1e293b; 
             border-radius: 8px; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         
         #ui-ctrl { 
@@ -115,7 +114,6 @@
 </div>
 
 <script>
-// --- CONFIGURATION ---
 const adUrl = "https://www.effectivegatecpm.com/ry0ezwn0e?key=e3e558f34558fb40e29d58310787f69e";
 const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
 const COLS = 10, ROWS = 20;
@@ -206,7 +204,14 @@ function loop(t = 0) {
     if (isOver) { document.getElementById('endPage').classList.remove('hidden'); return; }
     const dt = t - lastTime; lastTime = t;
     ['L', 'R'].forEach(dir => { if (keys[dir] && t > repeat[dir]) { let dx = dir === 'L' ? -1 : 1; if (!collide(active.x + dx, active.y, active.matrix)) { active.x += dx; AudioFX.move(); } repeat[dir] = t + (repeat[dir] === 0 ? 200 : 80); } });
-    if (keys.F && t > repeat.F) { const m = active.matrix[0].map((_, i) => active.matrix.map(row => row[i]).reverse()); if (!collide(active.x, active.y, m)) { active.matrix = m; AudioFX.rotate(); } repeat.F = t + 250; }
+    if (keys.F && t > repeat.F) { 
+        const m = active.matrix[0].map((_, i) => active.matrix.map(row => row[i]).reverse()); 
+        if (!collide(active.x, active.y, m)) { 
+            active.matrix = m; 
+            AudioFX.rotate(); 
+        } 
+        repeat.F = t + 250; 
+    }
     timer += dt;
     if (timer > (keys.D ? 30 : 500 - (level * 35))) {
         if (!collide(active.x, active.y + 1, active.matrix)) active.y++;
@@ -242,7 +247,10 @@ function draw() {
     if (active) {
         let gy = active.y; while (!collide(active.x, gy + 1, active.matrix)) gy++;
         active.matrix.forEach((row, r) => row.forEach((color, c) => {
-            if (color) { drawB((active.x + c)*s, (gy + r)*s, s, color, true); drawB((active.x + c)*s, (active.y + r)*s, s, color, false); }
+            if (color) { 
+                drawB((active.x + c)*s, (gy + r)*s, s, color, true); 
+                drawB((active.x + c)*s, (active.y + r)*s, s, color, false); 
+            }
         }));
     }
     particles.forEach((p, i) => { p.update(); p.draw(ctx); if (p.life <= 0) particles.splice(i, 1); });
@@ -251,17 +259,11 @@ function draw() {
 function drawB(x, y, s, c, isGhost) {
     ctx.globalAlpha = isGhost ? 0.25 : 1;
     ctx.fillStyle = c;
-    if (isGhost) { 
-        ctx.strokeStyle = c; ctx.lineWidth = 1; 
-        ctx.strokeRect(x + 2, y + 2, s - 4, s - 4); 
-    } else { 
-        // BLOCK WITH NEON SHADOW
-        ctx.shadowBlur = 10; ctx.shadowColor = c;
-        ctx.fillRect(x + 1, y + 1, s - 2, s - 2); 
-        ctx.shadowBlur = 0; // Reset shadow for next draw
-        ctx.strokeStyle = 'rgba(255,255,255,0.15)'; 
-        ctx.strokeRect(x + 1, y + 1, s - 2, s - 2); 
-    }
+    ctx.fillRect(x + 1, y + 1, s - 2, s - 2); 
+    // RECOVERED BORDERS: Always draws crisp white borders that follow rotation
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; 
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 1, y + 1, s - 2, s - 2);
     ctx.globalAlpha = 1;
 }
 
@@ -272,13 +274,9 @@ const setupBtn = (id, key) => {
 };
 setupBtn('L', 'L'); setupBtn('R', 'R'); setupBtn('D', 'D'); setupBtn('F', 'F');
 
-// FIX: Dedicated Start button (No Ad)
-document.getElementById('startBtn').onclick = (e) => {
-    e.stopPropagation();
-    startGame();
-};
+document.getElementById('startBtn').onclick = (e) => { e.stopPropagation(); startGame(); };
 
-// FIX: Dedicated Retry button (Triggers Ad)
+// Ensure Ad only on Retry
 document.getElementById('retryBtn').onclick = (e) => {
     e.stopPropagation();
     window.open(adUrl, '_blank');
