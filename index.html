@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Puzzle Block</title>
+    <title>Puzzle Block Neon</title>
     <style>
         :root { --neon: #0ef; --bg: #020617; --accent: #7c3aed; --pink: #ff007b; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; }
         
@@ -42,7 +42,7 @@
         
         .page { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
         .hidden { display: none !important; }
-        .play-btn { padding: 18px 45px; font-size: 1.3rem; background: var(--accent); color: white; border: none; border-radius: 50px; font-weight: bold; box-shadow: 0 0 25px var(--accent); cursor: pointer; margin-top: 15px; text-transform: uppercase; }
+        .play-btn { padding: 18px 45px; font-size: 1.3rem; background: var(--accent); color: white; border: none; border-radius: 50px; font-weight: bold; box-shadow: 0 0 25px var(--accent); cursor: pointer; margin-top: 15px; text-transform: uppercase; pointer-events: auto; }
         
         #leaderboard { margin: 20px 0; width: 230px; border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 15px; background: rgba(0, 0, 0, 0.4); padding: 12px; }
         .lb-title { color: var(--pink); font-weight: bold; letter-spacing: 3px; margin-bottom: 10px; text-align: center; font-size: 0.9rem; }
@@ -55,6 +55,7 @@
             background: #000; 
             border: 2px solid #1e293b; 
             border-radius: 8px; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         
         #ui-ctrl { 
@@ -114,9 +115,8 @@
 </div>
 
 <script>
-// --- ADSTERRA SMARTLINK ---
+// --- CONFIGURATION ---
 const adUrl = "https://www.effectivegatecpm.com/ry0ezwn0e?key=e3e558f34558fb40e29d58310787f69e";
-
 const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
 const COLS = 10, ROWS = 20;
 const SHAPES = [null, [[1,1,1,1]], [[1,1],[1,1]], [[0,1,0],[1,1,1]], [[1,1,0],[0,1,1]], [[0,1,1],[1,1,0]], [[1,0,0],[1,1,1]], [[0,0,1],[1,1,1]]];
@@ -251,28 +251,44 @@ function draw() {
 function drawB(x, y, s, c, isGhost) {
     ctx.globalAlpha = isGhost ? 0.25 : 1;
     ctx.fillStyle = c;
-    if (isGhost) { ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.strokeRect(x + 2, y + 2, s - 4, s - 4); }
-    else { ctx.fillRect(x + 1, y + 1, s - 2, s - 2); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.strokeRect(x + 1, y + 1, s - 2, s - 2); }
+    if (isGhost) { 
+        ctx.strokeStyle = c; ctx.lineWidth = 1; 
+        ctx.strokeRect(x + 2, y + 2, s - 4, s - 4); 
+    } else { 
+        // BLOCK WITH NEON SHADOW
+        ctx.shadowBlur = 10; ctx.shadowColor = c;
+        ctx.fillRect(x + 1, y + 1, s - 2, s - 2); 
+        ctx.shadowBlur = 0; // Reset shadow for next draw
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)'; 
+        ctx.strokeRect(x + 1, y + 1, s - 2, s - 2); 
+    }
     ctx.globalAlpha = 1;
 }
 
 const setupBtn = (id, key) => {
     const el = document.getElementById(id);
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[key] = true; repeat[key] = 0; }, { passive: false });
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); keys[key] = true; repeat[key] = 0; }, { passive: false });
     el.addEventListener('pointerup', () => keys[key] = false);
 };
 setupBtn('L', 'L'); setupBtn('R', 'R'); setupBtn('D', 'D'); setupBtn('F', 'F');
 
-document.getElementById('startBtn').onpointerdown = (e) => startGame();
-
-// ADSTERRA TRIGGER: Trigger ad when player clicks Try Again
-document.getElementById('retryBtn').onpointerdown = (e) => {
-    window.open(adUrl, '_blank'); // Opens the ad
-    startGame(); // Restarts the game in the background
+// FIX: Dedicated Start button (No Ad)
+document.getElementById('startBtn').onclick = (e) => {
+    e.stopPropagation();
+    startGame();
 };
 
-document.getElementById('fullScreenToggle').onpointerdown = (e) => { 
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{}); else document.exitFullscreen();
+// FIX: Dedicated Retry button (Triggers Ad)
+document.getElementById('retryBtn').onclick = (e) => {
+    e.stopPropagation();
+    window.open(adUrl, '_blank');
+    startGame();
+};
+
+document.getElementById('fullScreenToggle').onclick = (e) => { 
+    e.stopPropagation();
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{}); 
+    else document.exitFullscreen();
 };
 updateLeaderboard(0);
 </script>
