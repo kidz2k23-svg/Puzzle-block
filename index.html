@@ -1,124 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-    <link rel="stylesheet" href="lib/onsenui/css/onsenui.css">
-      <link rel="stylesheet" href="lib/onsenui/css/onsen-css-components.css">
-        <script src="lib/onsenui/js/onsenui.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Puzzle Block - Earn Coins</title>
+    <style>
+        :root { --bg: #1a1a2e; --panel: #16213e; --accent: #e94560; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        #stats { width: 100%; padding: 15px; display: flex; justify-content: space-around; background: var(--panel); font-size: 1.2rem; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        #game-container { position: relative; margin-top: 20px; border: 4px solid var(--panel); border-radius: 10px; background: #0f3460; padding: 10px; }
+        canvas { display: block; background: #000; border-radius: 5px; touch-action: none; }
+        #controls { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        button { padding: 15px 25px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        button:active { transform: scale(0.95); }
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .win-box { background: var(--panel); padding: 30px; border-radius: 15px; text-align: center; border: 2px solid var(--accent); }
+    </style>
+</head>
+<body>
 
-          <style>
-              .wallet-card {
-                    background: linear-gradient(135deg, #f1c40f, #f39c12);
-                          color: white;
-                                padding: 30px;
-                                      margin: 20px;
-                                            border-radius: 20px;
-                                                  text-align: center;
-                                                        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-                                                            }
-                                                                .earn-btn {
-                                                                      background-color: #2ecc71 !important;
-                                                                            font-size: 18px !important;
-                                                                                  padding: 10px !important;
-                                                                                        margin-top: 20px;
-                                                                                              width: 100%;
-                                                                                                  }
-                                                                                                      .shop-list {
-                                                                                                            margin-top: 10px;
-                                                                                                                }
-                                                                                                                  </style>
-                                                                                                                  </head>
-                                                                                                                  <body>
+    <div id="stats">
+        <div>Score: <span id="score">0</span></div>
+        <div>Coins: 🪙 <span id="coins">0</span></div>
+    </div>
 
-                                                                                                                    <ons-tabbar swipeable position="bottom">
-                                                                                                                        <ons-tab page="home.html" label="Play" icon="md-face" active></ons-tab>
-                                                                                                                            <ons-tab page="shop.html" label="Redeem" icon="md-money"></ons-tab>
-                                                                                                                              </ons-tabbar>
+    <div id="game-container">
+        <canvas id="puzzleCanvas" width="300" height="300"></canvas>
+    </div>
 
-                                                                                                                                <template id="home.html">
-                                                                                                                                    <ons-page id="home-page">
-                                                                                                                                          <ons-toolbar>
-                                                                                                                                                  <div class="center">Puzzle Blocks Earn</div>
-                                                                                                                                                        </ons-toolbar>
+    <div id="controls">
+        <div></div><button onclick="move('up')">UP</button><div></div>
+        <button onclick="move('left')">LEFT</button>
+        <button onclick="move('down')">DOWN</button>
+        <button onclick="move('right')">RIGHT</button>
+    </div>
 
-                                                                                                                                                              <div class="content">
-                                                                                                                                                                      <div class="wallet-card">
-                                                                                                                                                                                <h1 style="margin:0; font-size: 40px;">🪙 <span class="coin-display">0</span></h1>
-                                                                                                                                                                                          <p style="margin:5px 0 0 0; opacity: 0.9;">Total Coins Earned</p>
-                                                                                                                                                                                                  </div>
+    <div id="overlay">
+        <div class="win-box">
+            <h1 id="status-text">GAME OVER</h1>
+            <p>You earned 🪙 <span id="reward-coins">0</span> coins!</p>
+            <button onclick="claimAndRestart()">CLAIM & PLAY AGAIN</button>
+        </div>
+    </div>
 
-                                                                                                                                                                                                          <div style="padding: 20px; text-align: center;">
-                                                                                                                                                                                                                    <ons-button modifier="large" class="earn-btn" onclick="addCoins()">
-                                                                                                                                                                                                                                SMASH BLOCK (+10)
-                                                                                                                                                                                                                                          </ons-button>
-                                                                                                                                                                                                                                                  </div>
-                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                            </ons-page>
-                                                                                                                                                                                                                                                              </template>
+    <script>
+        // --- ADSTERRA CONFIGURATION ---
+        const adUrl = "https://www.effectivegatecpm.com/ry0ezwn0e?key=e3e558f34558fb40e29d58310787f69e";
+        
+        let score = 0;
+        let coins = parseInt(localStorage.getItem('totalCoins')) || 0;
+        document.getElementById('coins').innerText = coins;
 
-                                                                                                                                                                                                                                                                <template id="shop.html">
-                                                                                                                                                                                                                                                                    <ons-page id="shop-page">
-                                                                                                                                                                                                                                                                          <ons-toolbar>
-                                                                                                                                                                                                                                                                                  <div class="center">Redeem Rewards</div>
-                                                                                                                                                                                                                                                                                        </ons-toolbar>
+        const canvas = document.getElementById('puzzleCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Simple Game Logic for "Puzzle Block"
+        function gameOver() {
+            const reward = Math.floor(score / 10);
+            document.getElementById('reward-coins').innerText = reward;
+            document.getElementById('overlay').style.display = 'flex';
+        }
 
-                                                                                                                                                                                                                                                                                              <div class="content">
-                                                                                                                                                                                                                                                                                                      <div style="text-align:center; padding: 10px; background: #eee;">
-                                                                                                                                                                                                                                                                                                                  <strong>Your Balance: 🪙 <span class="coin-display">0</span></strong>
-                                                                                                                                                                                                                                                                                                                          </div>
-                                                                                                                                                                                                                                                                                                                                  
-                                                                                                                                                                                                                                                                                                                                          <ons-list class="shop-list">
-                                                                                                                                                                                                                                                                                                                                                    <ons-list-header>Gift Cards</ons-list-header>
-                                                                                                                                                                                                                                                                                                                                                              <ons-list-item tappable onclick="redeem(500, '$5 Gift Card')">
-                                                                                                                                                                                                                                                                                                                                                                          <div class="left">🎁</div>
-                                                                                                                                                                                                                                                                                                                                                                                      <div class="center">$5 Gift Card (500 Coins)</div>
-                                                                                                                                                                                                                                                                                                                                                                                                </ons-list-item>
-                                                                                                                                                                                                                                                                                                                                                                                                          <ons-list-item tappable onclick="redeem(1000, '$10 Gift Card')">
-                                                                                                                                                                                                                                                                                                                                                                                                                      <div class="left">🎁</div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                  <div class="center">$10 Gift Card (1000 Coins)</div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                            </ons-list-item>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                    </ons-list>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                          </div>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              </ons-page>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                </template>
+        function claimAndRestart() {
+            // Update coins
+            const reward = parseInt(document.getElementById('reward-coins').innerText);
+            coins += reward;
+            localStorage.setItem('totalCoins', coins);
+            document.getElementById('coins').innerText = coins;
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  <script>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      let coins = 0;
+            // Trigger Adsterra Smartlink
+            window.open(adUrl, '_blank');
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // Function to Earn Coins
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                              function addCoins() {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    coins += 10;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          updateAllDisplays();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ons.notification.toast('Block Smashed! +10 Coins', { timeout: 1000 });
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
+            // Restart Game
+            location.reload();
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        // Function to Spend Coins
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            function redeem(cost, item) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  if (coins >= cost) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          coins -= cost;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  updateAllDisplays();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ons.notification.alert('Success! You requested a ' + item);
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                } else {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        ons.notification.alert('You need ' + (cost - coins) + ' more coins!');
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  }
+        // Basic placeholder for game movement
+        function move(dir) {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            if(score > 100) gameOver(); // Trigger Game Over for testing
+        }
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      // Function to keep the numbers the same on all pages
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          function updateAllDisplays() {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                const displays = document.getElementsByClassName('coin-display');
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      for (let i = 0; i < displays.length; i++) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              displays[i].innerHTML = coins;
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        }
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            // Logic for the Shop page to show the balance when it opens
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                document.addEventListener('show', function(event) {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        if (event.target.id === 'shop-page' || event.target.id === 'home-page') {
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    updateAllDisplays();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                });
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </script>
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </body>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  </html>
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+        // Draw basic block
+        ctx.fillStyle = "#e94560";
+        ctx.fillRect(110, 110, 80, 80);
+    </script>
+</body>
+</html>
