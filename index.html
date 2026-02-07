@@ -2,89 +2,279 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Puzzle Block - Earn Coins</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Puzzle Block</title>
     <style>
-        :root { --bg: #1a1a2e; --panel: #16213e; --accent: #e94560; --text: #ffffff; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
-        #stats { width: 100%; padding: 15px; display: flex; justify-content: space-around; background: var(--panel); font-size: 1.2rem; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        #game-container { position: relative; margin-top: 20px; border: 4px solid var(--panel); border-radius: 10px; background: #0f3460; padding: 10px; }
-        canvas { display: block; background: #000; border-radius: 5px; touch-action: none; }
-        #controls { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        button { padding: 15px 25px; border: none; border-radius: 8px; background: var(--accent); color: white; font-weight: bold; cursor: pointer; font-size: 1rem; }
-        button:active { transform: scale(0.95); }
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .win-box { background: var(--panel); padding: 30px; border-radius: 15px; text-align: center; border: 2px solid var(--accent); }
+        :root { --neon: #0ef; --bg: #020617; --accent: #7c3aed; --pink: #ff007b; --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; }
+        
+        * { 
+            -webkit-tap-highlight-color: transparent !important; 
+            -webkit-touch-callout: none !important; 
+            -webkit-user-select: none !important; 
+            user-select: none !important; 
+            touch-action: none; 
+            box-sizing: border-box; 
+            outline: none !important;
+        }
+
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; position: fixed; width: 100vw; height: 100vh; overscroll-behavior: none; }
+        
+        #topBar { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 60px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            padding: 5px 15px 0; 
+            z-index: 5000; 
+            background: var(--bg); 
+        }
+        
+        .fs-btn { width: 40px; height: 40px; background: transparent; border: 2px solid var(--neon); border-radius: 10px; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+        .fs-btn svg { width: 20px; height: 20px; stroke: var(--neon); fill: none; }
+
+        #scoreCont { text-align: center; flex-grow: 1; pointer-events: none; margin-top: -2px; }
+        #score { font-size: 2.8rem; color: var(--neon); font-weight: bold; text-shadow: 0 0 15px var(--neon); margin: 0; line-height: 0.8; }
+        #levelText { font-size: 0.85rem; color: var(--pink); margin: 2px 0 0 0; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; }
+        
+        .page { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        .hidden { display: none !important; }
+        .play-btn { padding: 18px 45px; font-size: 1.3rem; background: var(--accent); color: white; border: none; border-radius: 50px; font-weight: bold; box-shadow: 0 0 25px var(--accent); cursor: pointer; margin-top: 15px; text-transform: uppercase; }
+        
+        #leaderboard { margin: 20px 0; width: 230px; border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 15px; background: rgba(0, 0, 0, 0.4); padding: 12px; }
+        .lb-title { color: var(--pink); font-weight: bold; letter-spacing: 3px; margin-bottom: 10px; text-align: center; font-size: 0.9rem; }
+        .lb-entry { display: flex; justify-content: space-between; align-items: center; font-family: 'Courier New', monospace; font-size: 1.1rem; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .rank-1 { color: var(--gold); } .rank-2 { color: var(--silver); } .rank-3 { color: var(--bronze); }
+
+        canvas { 
+            display: block; 
+            margin: 60px auto 0; 
+            background: #000; 
+            border: 2px solid #1e293b; 
+            border-radius: 8px; 
+        }
+        
+        #ui-ctrl { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 180px; 
+            z-index: 2000; 
+            pointer-events: none; 
+            background: linear-gradient(to top, var(--bg) 80%, transparent);
+        }
+        .c-btn { position: absolute; background: rgba(255,255,255,0.05); border: 3px solid var(--neon); border-radius: 50%; width: 75px; height: 75px; display: flex; align-items: center; justify-content: center; pointer-events: auto; }
+        .c-btn svg { width: 35px; height: 35px; stroke: var(--neon); fill: none; pointer-events: none; }
+        
+        #L { left: 15px; bottom: 65px; }
+        #R { right: 15px; bottom: 65px; } 
+        #F { left: 50%; bottom: 85px; transform: translateX(-50%); border-color: var(--pink); box-shadow: 0 0 15px var(--pink); }
+        #D { left: 50%; bottom: 5px; transform: translateX(-50%); width: 150px; border-radius: 40px; }
+
+        .shake { animation: shake 0.3s both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 50% { transform: translate3d(-5px, 0, 0); } }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <div id="stats">
-        <div>Score: <span id="score">0</span></div>
-        <div>Coins: 🪙 <span id="coins">0</span></div>
+<div id="topBar">
+    <div style="width:40px;"></div> 
+    <div id="scoreCont">
+        <p id="score">000000</p>
+        <p id="levelText">LEVEL 1</p>
     </div>
+    <div class="fs-btn" id="fullScreenToggle"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" stroke-width="2"/></svg></div>
+</div>
 
-    <div id="game-container">
-        <canvas id="puzzleCanvas" width="300" height="300"></canvas>
+<div id="startPage" class="page">
+    <h1 style="color:var(--neon); font-size:3.5rem; margin:0; text-shadow: 0 0 25px var(--neon);">Puzzle Block</h1>
+    <button class="play-btn" id="startBtn">START</button>
+</div>
+
+<div id="endPage" class="page hidden">
+    <h1 style="color:var(--pink); font-size:2.5rem; margin:0;">GAME OVER</h1>
+    <div id="leaderboard">
+        <div class="lb-title">HALL OF FAME</div>
+        <div id="lb-list"></div>
     </div>
+    <button class="play-btn" id="retryBtn">TRY AGAIN</button>
+</div>
 
-    <div id="controls">
-        <div></div><button onclick="move('up')">UP</button><div></div>
-        <button onclick="move('left')">LEFT</button>
-        <button onclick="move('down')">DOWN</button>
-        <button onclick="move('right')">RIGHT</button>
-    </div>
+<canvas id="stage"></canvas>
 
-    <div id="overlay">
-        <div class="win-box">
-            <h1 id="status-text">GAME OVER</h1>
-            <p>You earned 🪙 <span id="reward-coins">0</span> coins!</p>
-            <button onclick="claimAndRestart()">CLAIM & PLAY AGAIN</button>
-        </div>
-    </div>
+<div id="ui-ctrl">
+    <div class="c-btn" id="L"><svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3"/></svg></div>
+    <div class="c-btn" id="F"><svg viewBox="0 0 24 24"><path d="M4 4v5h5M20 20v-5h-5M2 12a10 10 0 0 1 18-6M22 12a10 10 0 0 1-18 6" stroke-width="3"/></svg></div>
+    <div class="c-btn" id="R"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3"/></svg></div>
+    <div class="c-btn" id="D"><svg viewBox="0 0 24 24"><path d="M7 13l5 5 5-5M7 6l5 5 5-5" stroke-width="3"/></svg></div>
+</div>
 
-    <script>
-        // --- ADSTERRA CONFIGURATION ---
-        const adUrl = "https://www.effectivegatecpm.com/ry0ezwn0e?key=e3e558f34558fb40e29d58310787f69e";
-        
-        let score = 0;
-        let coins = parseInt(localStorage.getItem('totalCoins')) || 0;
-        document.getElementById('coins').innerText = coins;
+<script>
+// --- ADSTERRA SMARTLINK ---
+const adUrl = "https://www.effectivegatecpm.com/ry0ezwn0e?key=e3e558f34558fb40e29d58310787f69e";
 
-        const canvas = document.getElementById('puzzleCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Simple Game Logic for "Puzzle Block"
-        function gameOver() {
-            const reward = Math.floor(score / 10);
-            document.getElementById('reward-coins').innerText = reward;
-            document.getElementById('overlay').style.display = 'flex';
+const canvas = document.getElementById('stage'), ctx = canvas.getContext('2d');
+const COLS = 10, ROWS = 20;
+const SHAPES = [null, [[1,1,1,1]], [[1,1],[1,1]], [[0,1,0],[1,1,1]], [[1,1,0],[0,1,1]], [[0,1,1],[1,1,0]], [[1,0,0],[1,1,1]], [[0,0,1],[1,1,1]]];
+const COLOR_MAP = { 1: '#00ffff', 2: '#ffff00', 3: '#7c3aed', 4: '#33ff00', 5: '#ff0000', 6: '#0000ff', 7: '#ffffff' };
+
+let grid, active, score, level, isOver = true, lastTime = 0, timer = 0, particles = [];
+const keys = { L: false, R: false, D: false, F: false }, repeat = { L: 0, R: 0, F: 0 };
+
+const AudioFX = {
+    ctx: null,
+    async init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') await this.ctx.resume(); },
+    play(freq, type, duration, vol) {
+        if (!this.ctx || this.ctx.state !== 'running') return;
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        g.gain.setValueAtTime(vol, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(); o.stop(this.ctx.currentTime + duration);
+    },
+    land() { this.play(120, 'sine', 0.15, 0.15); },
+    line() { this.play(400, 'square', 0.1, 0.1); this.play(800, 'sine', 0.5, 0.2); },
+    move() { this.play(180, 'triangle', 0.1, 0.05); },
+    rotate() { this.play(400, 'square', 0.1, 0.03); },
+    over() { this.play(100, 'sawtooth', 0.6, 0.2); }
+};
+
+class StarParticle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y; this.color = color;
+        this.size = Math.random() * 10 + 8; 
+        this.vx = (Math.random() - 0.5) * 30; 
+        this.vy = (Math.random() - 0.5) * 30 - 12;
+        this.angle = Math.random() * Math.PI * 2;
+        this.spin = (Math.random() - 0.5) * 0.5;
+        this.life = 1.0;
+    }
+    update() { this.vx *= 0.95; this.vy += 0.6; this.x += this.vx; this.y += this.vy; this.angle += this.spin; this.life -= 0.015; }
+    draw(ctx) {
+        ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+        ctx.fillStyle = this.color; ctx.globalAlpha = this.life;
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.cos((18 + i * 72) * Math.PI / 180) * this.size, -Math.sin((18 + i * 72) * Math.PI / 180) * this.size);
+            ctx.lineTo(Math.cos((54 + i * 72) * Math.PI / 180) * (this.size / 2), -Math.sin((54 + i * 72) * Math.PI / 180) * (this.size / 2));
         }
+        ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+}
 
-        function claimAndRestart() {
-            // Update coins
-            const reward = parseInt(document.getElementById('reward-coins').innerText);
-            coins += reward;
-            localStorage.setItem('totalCoins', coins);
-            document.getElementById('coins').innerText = coins;
+function updateLeaderboard(newScore) {
+    let scores = JSON.parse(localStorage.getItem('puzzleBlockScores') || '[]');
+    if (newScore > 0) { scores.push(newScore); scores.sort((a,b)=>b-a); scores = scores.slice(0,5); localStorage.setItem('puzzleBlockScores', JSON.stringify(scores)); }
+    const list = document.getElementById('lb-list'), trophies = ["🏆", "🥈", "🥉", "•", "•"], classes = ["rank-1", "rank-2", "rank-3", "rank-other", "rank-other"];
+    list.innerHTML = scores.map((s, i) => `<div class="lb-entry ${classes[i]}"><span>${trophies[i]} Rank ${i+1}</span><span>${s.toString().padStart(6, '0')}</span></div>`).join('');
+}
 
-            // Trigger Adsterra Smartlink
-            window.open(adUrl, '_blank');
+async function startGame() {
+    await AudioFX.init();
+    grid = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+    score = 0; level = 1; isOver = false; particles = [];
+    document.getElementById('score').innerText = "000000";
+    document.getElementById('startPage').classList.add('hidden');
+    document.getElementById('endPage').classList.add('hidden');
+    spawn(); requestAnimationFrame(loop);
+}
 
-            // Restart Game
-            location.reload();
+function spawn() {
+    const id = Math.floor(Math.random() * 7) + 1;
+    active = { matrix: SHAPES[id].map(row => row.map(v => v ? COLOR_MAP[id] : null)), x: 3, y: 0 };
+    if (collide(active.x, active.y, active.matrix)) { isOver = true; AudioFX.over(); updateLeaderboard(score); }
+}
+
+function collide(x, y, mat) {
+    for (let r = 0; r < mat.length; r++) {
+        for (let c = 0; c < mat[r].length; c++) {
+            if (mat[r][c]) {
+                let nx = x + c, ny = y + r;
+                if (nx < 0 || nx >= COLS || ny >= ROWS || (ny >= 0 && grid[ny][nx])) return true;
+            }
         }
+    }
+    return false;
+}
 
-        // Basic placeholder for game movement
-        function move(dir) {
-            score += 10;
-            document.getElementById('score').innerText = score;
-            if(score > 100) gameOver(); // Trigger Game Over for testing
+function loop(t = 0) {
+    if (isOver) { document.getElementById('endPage').classList.remove('hidden'); return; }
+    const dt = t - lastTime; lastTime = t;
+    ['L', 'R'].forEach(dir => { if (keys[dir] && t > repeat[dir]) { let dx = dir === 'L' ? -1 : 1; if (!collide(active.x + dx, active.y, active.matrix)) { active.x += dx; AudioFX.move(); } repeat[dir] = t + (repeat[dir] === 0 ? 200 : 80); } });
+    if (keys.F && t > repeat.F) { const m = active.matrix[0].map((_, i) => active.matrix.map(row => row[i]).reverse()); if (!collide(active.x, active.y, m)) { active.matrix = m; AudioFX.rotate(); } repeat.F = t + 250; }
+    timer += dt;
+    if (timer > (keys.D ? 30 : 500 - (level * 35))) {
+        if (!collide(active.x, active.y + 1, active.matrix)) active.y++;
+        else { AudioFX.land(); active.matrix.forEach((row, r) => row.forEach((color, c) => { if(color) grid[active.y+r][active.x+c] = color; })); checkLines(); spawn(); }
+        timer = 0;
+    }
+    draw(); requestAnimationFrame(loop);
+}
+
+function checkLines() {
+    let cleared = 0;
+    const cw = canvas.width / COLS, ch = canvas.height / ROWS;
+    for (let y = ROWS - 1; y >= 0; y--) {
+        if (grid[y].every(cell => cell !== null)) {
+            for (let x = 0; x < COLS; x++) { for(let i=0; i<15; i++) particles.push(new StarParticle(x * cw + cw/2, y * ch + ch/2, grid[y][x])); }
+            grid.splice(y, 1); grid.unshift(Array(COLS).fill(null)); cleared++; y++;
         }
+    }
+    if (cleared > 0) {
+        score += [0, 100, 300, 500, 800][cleared]; level = Math.floor(score / 1000) + 1; AudioFX.line();
+        document.getElementById('score').innerText = score.toString().padStart(6, '0');
+        document.getElementById('levelText').innerText = "LEVEL " + level;
+        canvas.classList.add('shake'); setTimeout(() => canvas.classList.remove('shake'), 300);
+    }
+}
 
-        // Draw basic block
-        ctx.fillStyle = "#e94560";
-        ctx.fillRect(110, 110, 80, 80);
-    </script>
+function draw() {
+    const availableH = window.innerHeight - 60 - 180;
+    const s = Math.floor(Math.min(window.innerWidth * 0.98 / COLS, availableH / ROWS));
+    canvas.width = s * COLS; canvas.height = s * ROWS;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    grid.forEach((row, y) => row.forEach((color, x) => { if (color) drawB(x*s, y*s, s, color, false); }));
+    if (active) {
+        let gy = active.y; while (!collide(active.x, gy + 1, active.matrix)) gy++;
+        active.matrix.forEach((row, r) => row.forEach((color, c) => {
+            if (color) { drawB((active.x + c)*s, (gy + r)*s, s, color, true); drawB((active.x + c)*s, (active.y + r)*s, s, color, false); }
+        }));
+    }
+    particles.forEach((p, i) => { p.update(); p.draw(ctx); if (p.life <= 0) particles.splice(i, 1); });
+}
+
+function drawB(x, y, s, c, isGhost) {
+    ctx.globalAlpha = isGhost ? 0.25 : 1;
+    ctx.fillStyle = c;
+    if (isGhost) { ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.strokeRect(x + 2, y + 2, s - 4, s - 4); }
+    else { ctx.fillRect(x + 1, y + 1, s - 2, s - 2); ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.strokeRect(x + 1, y + 1, s - 2, s - 2); }
+    ctx.globalAlpha = 1;
+}
+
+const setupBtn = (id, key) => {
+    const el = document.getElementById(id);
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[key] = true; repeat[key] = 0; }, { passive: false });
+    el.addEventListener('pointerup', () => keys[key] = false);
+};
+setupBtn('L', 'L'); setupBtn('R', 'R'); setupBtn('D', 'D'); setupBtn('F', 'F');
+
+document.getElementById('startBtn').onpointerdown = (e) => startGame();
+
+// ADSTERRA TRIGGER: Trigger ad when player clicks Try Again
+document.getElementById('retryBtn').onpointerdown = (e) => {
+    window.open(adUrl, '_blank'); // Opens the ad
+    startGame(); // Restarts the game in the background
+};
+
+document.getElementById('fullScreenToggle').onpointerdown = (e) => { 
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(e=>{}); else document.exitFullscreen();
+};
+updateLeaderboard(0);
+</script>
 </body>
 </html>
